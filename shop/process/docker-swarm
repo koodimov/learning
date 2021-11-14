@@ -1,0 +1,8 @@
+docker swarm init
+
+docker secret create mycert.ca mycert.ca
+
+docker config create my.conf my.conf
+
+docker stack deploy stack_name -c docker-compose.yml
+
