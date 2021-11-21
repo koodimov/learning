@@ -1,0 +1,66 @@
+version: "3.7"
+services:
+  sample-app:
+    image: kudymov/sample:0.0.1
+    secrets:
+      - postgres-passwd
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_DB=sample-db
+    networks:
+      - postgres-network
+      - frontend-network
+
+  sample-proxy:
+    image: nginx:1.21.3-alpine
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - sample-app
+    networks:
+      - frontend-network
+    configs:
+      - source: nginx_default_conf
+        target: /etc/nginx/nginx.conf
+    secrets:
+      - source: sample.crt
+        target: /etc/nginx/ssl/sample.crt
+      - source: sample.key
+        target: /etc/nginx/ssl/sample.key
+      - source: dhparam.pem
+        target: /etc/nginx/dhparam.pem
+
+  sample-db:
+    image: postgres:14.1-alpine
+    secrets:
+      - postgres-passwd
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-passwd
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - postgres-network
+
+volumes:
+  postgres-data:
+secrets:
+  postgres-passwd:
+    external: true
+  sample.crt:
+    external: true
+  sample.key:
+    external: true
+  dhparam.pem:
+    external: true
+networks:
+  postgres-network:
+  frontend-network:
+configs:
+  nginx_default_conf:
+    external: true
